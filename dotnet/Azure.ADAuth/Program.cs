@@ -31,6 +31,9 @@ builder.Services.AddSwaggerGen(c =>
                     AuthorizationUrl = new Uri($"{azureAdSection["Instance"]}{azureAdSection["TenantId"]}/oauth2/v2.0/authorize"),
                     TokenUrl = new Uri($"{azureAdSection["Instance"]}{azureAdSection["TenantId"]}/oauth2/v2.0/token"),
                     Scopes = new Dictionary<string, string> {
+                        { "openid", "openid" },
+                        { "profile", "profile" },
+                        { "offline_access", "offline_access" },
                         { $"{azureAdSection["Audience"]}/{azureAdSection["Scopes"]}", "Access as a user" }
                     }
                 }
