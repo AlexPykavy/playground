@@ -1,12 +1,8 @@
-locals {
-  app_name = "azurefunc-local-test"
-}
-
 provider "azurerm" {
   features {}
 }
 
-resource "random_id" "storage_account" {
+resource "random_id" "main" {
   byte_length = 8
 }
 
@@ -15,12 +11,12 @@ data "http" "myip" {
 }
 
 resource "azurerm_resource_group" "main" {
-  name     = local.app_name
+  name     = "${lower(random_id.main.hex)}-rg"
   location = "West Europe"
 }
 
 resource "azurerm_storage_account" "main" {
-  name                     = "${lower(random_id.storage_account.hex)}testsa"
+  name                     = "${lower(random_id.main.hex)}sa"
   resource_group_name      = azurerm_resource_group.main.name
   location                 = azurerm_resource_group.main.location
   account_tier             = "Standard"

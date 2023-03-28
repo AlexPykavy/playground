@@ -1,5 +1,4 @@
 locals {
-  app_name = "azuread-local-test"
   api_url  = "http://localhost:8000/"
 }
 
@@ -9,12 +8,16 @@ provider "azurerm" {
 
 data "azuread_client_config" "current" {}
 
+resource "random_id" "main" {
+  byte_length = 8
+}
+
 resource "random_uuid" "access_as_user" {}
 
 resource "azuread_application" "main" {
-  display_name            = local.app_name
+  display_name            = lower(random_id.main.hex)
   group_membership_claims = ["SecurityGroup"]
-  identifier_uris         = ["api://${local.app_name}"]
+  identifier_uris         = ["api://${lower(random_id.main.hex)}"]
   owners                  = [data.azuread_client_config.current.object_id]
 
   api {
@@ -44,7 +47,7 @@ resource "azuread_application" "main" {
 }
 
 output "AzureAd__Audience" {
-  value = "api://${local.app_name}"
+  value = "api://${lower(random_id.main.hex)}"
 }
 
 output "AzureAd__ClientId" {
