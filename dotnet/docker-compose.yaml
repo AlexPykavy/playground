@@ -30,3 +30,13 @@ services:
           memory: 30M
     ports:
       - 8001:80
+
+  azure.function:
+    build:
+      context: Azure.Function
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    env_file:
+      - ./Azure.Function/.infra/.env
+    ports:
+      - 8002:80
