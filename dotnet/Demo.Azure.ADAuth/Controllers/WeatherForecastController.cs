@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web.Resource;
 
-namespace Azure.ADAuth.Controllers;
+namespace Demo.Azure.ADAuth.Controllers;
 
 [Authorize]
 [ApiController]

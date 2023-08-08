@@ -1,4 +1,4 @@
-namespace Azure.ADAuth;
+namespace Demo.Azure.ADAuth;
 
 public class WeatherForecast
 {

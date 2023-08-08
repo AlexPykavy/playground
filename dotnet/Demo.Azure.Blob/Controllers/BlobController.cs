@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web.Resource;
 
-namespace Azure.Blob.Controllers;
+namespace Demo.Azure.Blob.Controllers;
 
 [ApiController]
 [Route("[controller]")]
