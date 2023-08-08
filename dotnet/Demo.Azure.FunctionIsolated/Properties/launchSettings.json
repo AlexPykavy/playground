@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Azure_FunctionIsolated": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7136",
+      "launchBrowser": false
+    }
+  }
+}
