@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Azure;
 using Microsoft.Identity.Web;
+using Demo.Azure.Blob.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOptions<StorageSettings>().Bind(builder.Configuration.GetSection("Storage"));
+builder.Services.AddOptions<StorageOptions>().Bind(builder.Configuration.GetSection("Storage"));
 builder.Services.AddAzureClients(clientBuilder  =>
 {
     clientBuilder.AddBlobServiceClient(builder.Configuration.GetSection("Storage"));

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web.Resource;
+using Demo.Azure.Blob.Options;
 
 namespace Demo.Azure.Blob.Controllers;
 
@@ -16,10 +17,13 @@ public class BlobController : ControllerBase
     private readonly BlobContainerClient _blobContainerClient;
     private readonly ILogger<BlobController> _logger;
 
-    public BlobController(BlobServiceClient blobServiceClient, IOptions<StorageSettings> settings, ILogger<BlobController> logger)
+    public BlobController(
+        ILogger<BlobController> logger,
+        BlobServiceClient blobServiceClient,
+        IOptions<StorageOptions> storageOptions)
     {
-        _blobContainerClient = blobServiceClient.GetBlobContainerClient(settings.Value.ContainerName);
         _logger = logger;
+        _blobContainerClient = blobServiceClient.GetBlobContainerClient(storageOptions.Value.ContainerName);
 
         _blobContainerClient.CreateIfNotExists();
     }
@@ -54,7 +58,7 @@ public class BlobController : ControllerBase
     [HttpPost("file")]
     [RequestSizeLimit(int.MaxValue)]
     [RequestFormLimits(MultipartBodyLengthLimit = 500 * 1024 * 1024)]
-    public async Task<IActionResult> PostAsStream(IFormFile file, bool asStream)
+    public async Task<IActionResult> Post(IFormFile file, bool asStream)
     {
         if (file == null)
         {
