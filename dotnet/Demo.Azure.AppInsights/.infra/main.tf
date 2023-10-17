@@ -3,6 +3,7 @@ provider "azurerm" {
 }
 
 data "azuread_client_config" "current" {}
+data "azurerm_subscription" "current" {}
 
 resource "random_id" "main" {
   byte_length = 8
@@ -45,16 +46,31 @@ resource "azuread_service_principal_password" "main" {
   service_principal_id = azuread_service_principal.main.object_id
 }
 
-resource "azurerm_role_assignment" "main_sp_to_app_insights" {
-  scope                = azurerm_application_insights.main.id
-  role_definition_name = "Reader"
-  principal_id         = azuread_service_principal.main.object_id
+resource "azurerm_role_definition" "app_insights_reader" {
+  name        = "Log Analytics Reader (App Insights)"
+  scope       = data.azurerm_subscription.current.id
+  description = "This is a custom role created via Terraform"
+
+  permissions {
+    actions     = [
+      "Microsoft.Insights/*/read",
+      "Microsoft.OperationalInsights/*/read",
+      "Microsoft.OperationalInsights/workspaces/analytics/query/action",
+      "Microsoft.OperationalInsights/workspaces/search/action",
+      "Microsoft.Support/*"
+    ]
+    not_actions = []
+  }
+
+  assignable_scopes = [
+    data.azurerm_subscription.current.id, # /subscriptions/00000000-0000-0000-0000-000000000000
+  ]
 }
 
-resource "azurerm_role_assignment" "main_sp_to_law" {
-  scope                = azurerm_log_analytics_workspace.main.id
-  role_definition_name = "Reader"
-  principal_id         = azuread_service_principal.main.object_id
+resource "azurerm_role_assignment" "main_sp_to_app_insights" {
+  scope              = data.azurerm_subscription.current.id
+  role_definition_id = azurerm_role_definition.app_insights_reader.role_definition_resource_id
+  principal_id       = azuread_service_principal.main.object_id
 }
 
 output "ApplicationInsights__ConnectionString" {
