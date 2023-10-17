@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  azure.threadstarvation:
+    build:
+      context: .
+      dockerfile: ../Dockerfile.WebApi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    env_file:
+      - ./.infra/.env
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 64M
+        reservations:
+          cpus: '1'
+          memory: 64M
+    ports:
+      - 8000:80
