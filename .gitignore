@@ -1,3 +1,4 @@
+# Terraform
 .terraform
 
 .env
@@ -6,3 +7,7 @@
 
 *.tfstate
 *.tfstate.*
+
+# C#
+bin
+obj
