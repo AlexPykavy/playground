@@ -21,7 +21,7 @@ COPY --from=build /publish .
 ARG USERNAME=dotnet
 RUN groupadd --gid 10001 $USERNAME \
     && useradd --uid 10000 --gid $USERNAME --shell /bin/bash --create-home $USERNAME \
-    && chown -R $USERNAME:$USERNAME App_Data
+    && if [ -d App_Data ]; then chown -R $USERNAME:$USERNAME App_Data; fi
 USER $USERNAME
 
 ENTRYPOINT ["dotnet", "App.dll"]
