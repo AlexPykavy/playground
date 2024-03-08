@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  ef.optimisticlocking:
+    build:
+      context: .
+      dockerfile: ../Dockerfile.WebApi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - 8000:80
