@@ -17,6 +17,10 @@ FROM mcr.microsoft.com/azure-functions/$AZ_FUNCTION_IMAGE
 WORKDIR /app
 
 ENV AzureWebJobsScriptRoot=/app \
+    AzureWebJobsSecretStorageType=files \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+
+RUN mkdir -p /azure-functions-host/Secrets/ \
+    && echo '{"masterKey":{"name":"master","value":"test","encrypted":false},"functionKeys":[]}' > /azure-functions-host/Secrets/host.json
 
 COPY --from=build /publish .
