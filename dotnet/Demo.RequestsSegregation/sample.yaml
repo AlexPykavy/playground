@@ -1,0 +1,161 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-code
+data:
+  index.js: |
+    const express = require('express');
+
+    const app = express();
+
+    app.get("/api/read", (req, res) => {
+      res.send(`Read from the ${process.env.SERVER_MODE} server`);
+    });
+
+    app.post("/api/write", (req, res) => {
+      res.send(`Write from the ${process.env.SERVER_MODE} server`);
+    });
+
+    app.listen(5000);
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: read-app
+spec:
+  selector:
+    matchLabels:
+      app: read-app
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: read-app
+    spec:
+      containers:
+        - name: app
+          image: node
+          workingDir: /app
+          command:
+            - /bin/bash
+            - -c
+            - npm init -y && npm install express && cp /mnt/index.js . && node index.js
+          env:
+            - name: SERVER_MODE
+              value: READ_ONLY
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: source-code
+              mountPath: /mnt/
+      volumes:
+        - name: source-code
+          configMap:
+            name: source-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: read-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: read-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: write-app
+spec:
+  selector:
+    matchLabels:
+      app: write-app
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: write-app
+    spec:
+      containers:
+        - name: app
+          image: node
+          workingDir: /app
+          command:
+            - /bin/bash
+            - -c
+            - npm init -y && npm install express && cp /mnt/index.js . && node index.js
+          env:
+            - name: SERVER_MODE
+              value: READ_WRITE
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: source-code
+              mountPath: /mnt/
+      volumes:
+        - name: source-code
+          configMap:
+            name: source-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: write-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: write-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  annotations:
+    # https://github.com/kubernetes/ingress-nginx/issues/187
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      internal;
+      rewrite ^ $original_uri break;
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location /api {
+        if ( $request_method = GET) {
+          set $target_destination '/_read';
+        }
+        if ( $request_method != GET) {
+          set $target_destination '/_write';
+        }
+        set $original_uri $uri;
+        rewrite ^ $target_destination last;
+      }
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /_read
+        pathType: Prefix
+        backend:
+          service:
+            name: read-app
+            port:
+              number: 5000
+      - path: /_write
+        pathType: Prefix
+        backend:
+          service:
+            name: write-app
+            port:
+              number: 5000

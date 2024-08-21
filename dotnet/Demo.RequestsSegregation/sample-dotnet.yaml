@@ -1,0 +1,206 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-code
+data:
+  app.csproj: |
+    <Project Sdk="Microsoft.NET.Sdk.Web">
+      <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+      </PropertyGroup>
+
+      <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.14">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.14" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+      </ItemGroup>
+
+    </Project>
+  Program.cs: |
+    var builder = WebApplication.CreateBuilder(args);
+
+    var app = builder.Build();
+    var serverMode = Environment.GetEnvironmentVariable("SERVER_MODE");
+    app.MapGet("/api/read", () => new Response { Message = $"Read from the {serverMode} server" });
+    app.MapGet("/api/read/message", () => new Response { Message = $"Read a particular message from the {serverMode} server" });
+    app.MapPost("/api/write", () => new Response { Message = $"Write from the {serverMode} server" });
+    app.Run();
+
+    class Response
+    {
+      public string Message { get; set; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: read-app
+spec:
+  selector:
+    matchLabels:
+      app: read-app
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: read-app
+    spec:
+      containers:
+        - name: app
+          image: mcr.microsoft.com/dotnet/sdk:6.0
+          workingDir: /app
+          command:
+            - /bin/bash
+            - -c
+            - cp /mnt/* . && dotnet run
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+            - name: SERVER_MODE
+              value: READ_ONLY
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: source-code
+              mountPath: /mnt/
+      volumes:
+        - name: source-code
+          configMap:
+            name: source-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: read-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: read-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: write-app
+spec:
+  selector:
+    matchLabels:
+      app: write-app
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: write-app
+    spec:
+      containers:
+        - name: app
+          image: mcr.microsoft.com/dotnet/sdk:6.0
+          workingDir: /app
+          command:
+            - /bin/bash
+            - -c
+            - cp /mnt/* . && dotnet run
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5000
+            - name: SERVER_MODE
+              value: READ_WRITE
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+            - name: source-code
+              mountPath: /mnt/
+      volumes:
+        - name: source-code
+          configMap:
+            name: source-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: write-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: write-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  annotations:
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      internal;
+      rewrite ^ $original_uri break;
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location /api {
+        if ( $request_method = GET) {
+          set $target_destination '/_read';
+        }
+        if ( $request_method != GET) {
+          set $target_destination '/_write';
+        }
+        set $original_uri $uri;
+        rewrite ^ $target_destination last;
+      }
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /_read
+        pathType: Prefix
+        backend:
+          service:
+            name: read-app
+            port:
+              number: 5000
+      - path: /_write
+        pathType: Prefix
+        backend:
+          service:
+            name: write-app
+            port:
+              number: 5000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app2
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api/read/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: read-app
+            port:
+              number: 5000
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: write-app
+            port:
+              number: 5000
