@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - 1433:1433
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: yourStrong(!)Password
+
+  ef.linq:
+    build:
+      context: .
+      dockerfile: ../Dockerfile.WebApi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Main=Server=mssql;Initial Catalog=Weather;MultipleActiveResultSets=true;User ID=sa;Password=yourStrong(!)Password
+    ports:
+      - 8000:80
