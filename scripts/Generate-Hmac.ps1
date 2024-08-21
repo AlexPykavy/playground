@@ -12,7 +12,7 @@ param(
     $Method = "GET"
 )
 
-$encodedUri = [Net.WebUtility]::UrlEncode($Uri)
+$encodedUri = [Net.WebUtility]::UrlEncode($Uri.ToLower())
 $timestamp = [DateTimeOffset]::Now.ToUnixTimeSeconds()
 $nonce = [guid]::NewGuid().ToString("N")
 
@@ -23,4 +23,4 @@ $signature = [Convert]::ToBase64String($sha256.ComputeHash([Text.Encoding]::UTF8
 
 $auth = "Authorization: Hmac ${AppId}:${signature}:${nonce}:${timestamp}"
 
-"curl.exe -vkL -H `"$auth`" $uri" #| iex
+"curl.exe -vkL -H `"$auth`" `"$uri`"" #| iex
