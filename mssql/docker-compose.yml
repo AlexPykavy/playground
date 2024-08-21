@@ -1,0 +1,17 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - 1433:1433
+    environment:
+      ACCEPT_EULA: Y
+      MSSQL_SA_PASSWORD: yourStrong(!)Password
+      MSSQL_AGENT_ENABLED: true
+    deploy:
+      resources:
+        reservations:
+          cpus: "1"
+          memory: 2GiB
+        limits:
+          cpus: "1"
+          memory: 2GiB
