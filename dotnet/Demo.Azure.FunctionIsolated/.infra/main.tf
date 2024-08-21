@@ -1,10 +1,10 @@
 variable "use_managed_identity" {
-  default = true
+  default = false
 }
 
 provider "azurerm" {
   features {}
-  storage_use_azuread = true
+  storage_use_azuread = var.use_managed_identity ? true : false
 }
 
 data "azuread_client_config" "current" {}
@@ -50,8 +50,33 @@ resource "azurerm_storage_queue" "main" {
   storage_account_name = azurerm_storage_account.main.name
 }
 
+resource "azurerm_storage_container" "main" {
+  for_each = toset(["weather-forecast-input", "weather-forecast-output", "weather-forecast-templates"])
+
+  name                  = each.key
+  storage_account_name  = azurerm_storage_account.main.name
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_blob" "weather_forecast_template" {
+  name                   = "common.txt"
+  storage_account_name   = azurerm_storage_account.main.name
+  storage_container_name = azurerm_storage_container.main["weather-forecast-templates"].name
+  type                   = "Block"
+  source_content         = <<EOT
+WEATHER FORECAST
+
+Dear user,
+
+here is the weather forecast details for tomorrow:
+{0}
+
+Best regards.
+EOT
+}
+
 output "AzureWebJobsStorage" {
-  value = var.use_managed_identity ? null : (azurerm_storage_account.main.primary_connection_string)
+  value = var.use_managed_identity ? null : nonsensitive(azurerm_storage_account.main.primary_connection_string)
 }
 
 output "AzureWebJobsStorage__blobServiceUri" {

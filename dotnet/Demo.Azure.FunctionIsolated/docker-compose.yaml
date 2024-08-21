@@ -9,6 +9,7 @@ services:
         AZ_FUNCTION_IMAGE: dotnet-isolated:4-slim
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      # - AzureFunctionsWebHost__hostid=azure-functionisolated
     env_file:
       - ./.infra/.env
     ports:
