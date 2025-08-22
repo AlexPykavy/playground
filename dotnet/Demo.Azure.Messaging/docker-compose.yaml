@@ -1,0 +1,11 @@
+services:
+  azure.messaging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    env_file:
+      - ./.infra/.env
+    ports:
+      - 8000:80

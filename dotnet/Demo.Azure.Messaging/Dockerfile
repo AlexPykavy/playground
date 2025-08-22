@@ -1,0 +1,35 @@
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+
+WORKDIR /src
+
+RUN dotnet tool install dotnet-counters --version 6.* --tool-path /publish \
+    && dotnet tool install dotnet-dump --version 6.* --tool-path /publish \
+    && dotnet tool install dotnet-trace --version 6.* --tool-path /publish \
+    && chmod +x /publish/dotnet-*
+
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY . .
+
+RUN mv *.csproj App.csproj \
+    && dotnet publish -o /publish
+
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+ENV TZ=Europe/Warsaw
+
+RUN apt-get update \
+    && apt-get install gdb aspnetcore-runtime-6.0 -y
+
+COPY --from=build /publish .
+
+ARG USERNAME=dotnet
+RUN groupadd --gid 10001 $USERNAME \
+    && useradd --uid 10000 --gid $USERNAME --shell /bin/bash --create-home $USERNAME \
+    && if [ -d App_Data ]; then chown -R $USERNAME:$USERNAME App_Data; fi
+USER $USERNAME
+
+ENTRYPOINT ["dotnet", "App.dll", "--urls=http://0.0.0.0:80"]
