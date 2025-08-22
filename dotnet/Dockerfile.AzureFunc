@@ -4,6 +4,11 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 WORKDIR /src
 
+RUN dotnet tool install dotnet-counters --version 6.* --tool-path /publish \
+    && dotnet tool install dotnet-dump --version 6.* --tool-path /publish \
+    && dotnet tool install dotnet-trace --version 6.* --tool-path /publish \
+    && chmod +x /publish/dotnet-*
+
 COPY *.csproj ./
 RUN dotnet restore
 
