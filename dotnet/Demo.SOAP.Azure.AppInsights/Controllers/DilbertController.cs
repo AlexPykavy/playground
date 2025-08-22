@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ServiceReference;
+using DilbertServiceReference;
 
 namespace Demo.SOAP.Azure.AppInsights.Controllers;
 
@@ -23,7 +23,7 @@ public class DilbertController : ControllerBase
         {
             var response = await _dilbertSoapClient.TodaysDilbertAsync();
 
-            return response.Body.TodaysDilbertResult;
+            return response;
         }
         catch (Exception ex)
         {
