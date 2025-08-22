@@ -1,5 +1,7 @@
 provider "azurerm" {
   features {}
+
+  skip_provider_registration = true
 }
 
 data "azuread_client_config" "current" {}

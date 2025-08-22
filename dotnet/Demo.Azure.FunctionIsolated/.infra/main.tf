@@ -4,6 +4,8 @@ variable "use_managed_identity" {
 
 provider "azurerm" {
   features {}
+
+  skip_provider_registration = true
   storage_use_azuread = var.use_managed_identity ? true : false
 }
 

@@ -1,5 +1,7 @@
 provider "azurerm" {
   features {}
+
+  skip_provider_registration = true
 }
 
 data "azuread_client_config" "current" {}
@@ -33,13 +35,12 @@ resource "azurerm_application_insights" "main" {
 resource "azuread_application" "main" {
   display_name            = "${lower(random_id.main.hex)}-app"
   group_membership_claims = ["SecurityGroup"]
-  identifier_uris         = ["api://${lower(random_id.main.hex)}-app"]
   owners                  = [data.azuread_client_config.current.object_id]
 }
 
 resource "azuread_service_principal" "main" {
-  application_id = azuread_application.main.application_id
-  owners         = [data.azuread_client_config.current.object_id]
+  client_id = azuread_application.main.client_id
+  owners    = [data.azuread_client_config.current.object_id]
 }
 
 resource "azuread_service_principal_password" "main" {
@@ -52,7 +53,7 @@ resource "azurerm_role_definition" "app_insights_reader" {
   description = "This is a custom role created via Terraform"
 
   permissions {
-    actions     = [
+    actions = [
       "Microsoft.Insights/*/read",
       "Microsoft.OperationalInsights/*/read",
       "Microsoft.OperationalInsights/workspaces/analytics/query/action",
@@ -82,7 +83,7 @@ output "ApplicationInsights__ResourceId" {
 }
 
 output "AzureAd__ClientId" {
-  value = azuread_application.main.application_id
+  value = azuread_application.main.client_id
 }
 
 output "AzureAd__ClientSecret" {

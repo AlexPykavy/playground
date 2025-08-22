@@ -1,5 +1,7 @@
 provider "azurerm" {
   features {}
+
+  skip_provider_registration = true
 }
 
 resource "random_pet" "main" {
@@ -14,12 +16,11 @@ data "http" "myip" {
 resource "azuread_application" "main" {
   display_name            = "${lower(random_pet.main.id)}-app"
   group_membership_claims = ["SecurityGroup"]
-  identifier_uris         = ["api://${lower(random_pet.main.id)}-app"]
   owners                  = [data.azuread_client_config.current.object_id]
 }
 
 resource "azuread_service_principal" "main" {
-  application_id = azuread_application.main.client_id
+  client_id = azuread_application.main.client_id
   owners    = [data.azuread_client_config.current.object_id]
 }
 
